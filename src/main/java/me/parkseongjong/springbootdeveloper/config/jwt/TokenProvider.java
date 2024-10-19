@@ -4,9 +4,11 @@ import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
 import me.parkseongjong.springbootdeveloper.domain.User;
+import me.parkseongjong.springbootdeveloper.repository.UserRepository;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
@@ -20,6 +22,7 @@ import java.util.Set;
 @Service
 public class TokenProvider {
     private final JwtProperties jwtProperties;
+    private final UserRepository userRepository;
 
     public String generateToken(User user, Duration expiredAt) {
         Date now = new Date();
@@ -58,9 +61,12 @@ public class TokenProvider {
 
     public Authentication getAuthentication(String token) {
         Claims claims = getClaims(token);
-        Set<SimpleGrantedAuthority> authorities = Collections.singleton(new SimpleGrantedAuthority("ROLE_USER"));
+        Long userId = claims.get("id", Long.class);
 
-        return new UsernamePasswordAuthenticationToken(new org.springframework.security.core.userdetails.User(claims.getSubject(), "", authorities), token, authorities);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with id: " + userId));
+        Set<SimpleGrantedAuthority> authorities = Collections.singleton(new SimpleGrantedAuthority("ROLE_USER"));
+        return new UsernamePasswordAuthenticationToken(user, token, authorities);
     }
 
     public Long getUserId(String token) {
