@@ -15,6 +15,8 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/outfits")
@@ -75,5 +77,19 @@ public class OutfitController {
     public ResponseEntity<String> getImageUrl(@PathVariable String fileName) {
         String imageUrl = s3Client.getUrl(BUCKET_NAME, fileName).toString();
         return new ResponseEntity<>(imageUrl, HttpStatus.OK);
+    }
+
+    @GetMapping("/list")
+    public ResponseEntity<List<String>> getUserOutfitList(@AuthenticationPrincipal User user) {
+        if (user == null) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
+
+        List<String> outfitFileNames = outfitRepository.findAllByUserId(user.getId())
+                .stream()
+                .map(Outfit::getImageUrl)
+                .collect(Collectors.toList());
+
+        return new ResponseEntity<>(outfitFileNames, HttpStatus.OK);
     }
 }
