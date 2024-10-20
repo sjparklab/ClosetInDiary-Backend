@@ -17,6 +17,7 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -72,11 +73,11 @@ public class UserApiController {
     }
 
     @GetMapping("/user-data")
-    public ResponseEntity<UserDataResponse> receiveUserData(Authentication authentication) {
-        if (authentication != null && authentication.isAuthenticated()) {
-            String email = authentication.getName();
-            return ResponseEntity.ok(new UserDataResponse(email));
+    public ResponseEntity<?> receiveUserData(@AuthenticationPrincipal User user) {
+        if (user == null) {
+            return new ResponseEntity<>("User not authenticated", HttpStatus.UNAUTHORIZED);
         }
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+
+        return ResponseEntity.ok(user);
     }
 }
