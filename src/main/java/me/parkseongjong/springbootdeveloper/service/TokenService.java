@@ -15,7 +15,12 @@ public class TokenService {
     private final UserService userService;
 
     public String createNewAccessToken(String refreshToken) {
+        if (refreshToken.startsWith("Bearer ")) {
+            refreshToken = refreshToken.substring(7);  // 'Bearer ' 제거
+        }
+
         if (!tokenProvider.validToken(refreshToken)) {
+            System.out.println("VAILD ERROR");
             throw new IllegalArgumentException("Unexpected token");
         }
 
