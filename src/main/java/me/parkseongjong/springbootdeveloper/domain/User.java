@@ -1,5 +1,6 @@
 package me.parkseongjong.springbootdeveloper.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -62,6 +63,7 @@ public class User implements UserDetails {
     }
 
     @Override
+    @JsonIgnore
     public String getPassword() {
         return password;
     }
