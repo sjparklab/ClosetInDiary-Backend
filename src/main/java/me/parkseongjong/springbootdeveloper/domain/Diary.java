@@ -1,14 +1,12 @@
 package me.parkseongjong.springbootdeveloper.domain;
 
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Table(name = "diary")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
+@Setter
 @Entity
 public class Diary {
     @Id
