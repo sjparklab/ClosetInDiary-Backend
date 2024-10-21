@@ -68,6 +68,9 @@ public class UserApiController {
 
     @PostMapping("/signup")
     public ResponseEntity<String> signup(@RequestBody SignupRequest signupRequest) {
+        if (userService.isEmailAlreadyInUse(signupRequest.getEmail())) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("Email already in use");
+        }
         userService.save(signupRequest);
         return ResponseEntity.status(HttpStatus.CREATED).body("Signup successful");
     }

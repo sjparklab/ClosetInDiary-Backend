@@ -15,6 +15,10 @@ public class UserService {
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
 
+    public boolean isEmailAlreadyInUse(String email) {
+        return userRepository.findByEmail(email).isPresent();
+    }
+
     public boolean authenticate(LoginRequest loginRequest) {
         User user = userRepository.findByEmail(loginRequest.getEmail())
                 .orElse(null);
@@ -26,6 +30,8 @@ public class UserService {
 
     public Long save(SignupRequest dto) {
         return userRepository.save(User.builder()
+                .username(dto.getUsername())
+                .name(dto.getName())
                 .email(dto.getEmail())
                 .password(bCryptPasswordEncoder.encode(dto.getPassword()))
                 .build()).getId();
