@@ -18,24 +18,26 @@ public class DiaryController {
 
     private final DiaryService diaryService;
 
-    // 모든 다이어리 조회
+    // 특정 유저의 다이어리 조회 (로그인된 사용자만)
     @GetMapping
-    public ResponseEntity<List<Diary>> getAllDiaries() {
-        List<Diary> diaries = diaryService.findAllDiaries();
-        return ResponseEntity.ok(diaries);
-    }
+    public ResponseEntity<List<Diary>> getMyDiaries(@AuthenticationPrincipal User user) {
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build(); // 유저 정보가 없으면 예외 처리
+        }
 
-    // 특정 유저의 다이어리 조회
-    @GetMapping("/user/{userId}")
-    public ResponseEntity<List<Diary>> getDiariesByUser(@PathVariable Long userId) {
-        List<Diary> diaries = diaryService.findDiariesByUserId(userId);
+        List<Diary> diaries = diaryService.findDiariesByUserId(user.getId());
         return ResponseEntity.ok(diaries);
     }
 
     // 특정 다이어리 조회
     @GetMapping("/{id}")
-    public ResponseEntity<Diary> getDiary(@PathVariable Long id) {
+    public ResponseEntity<Diary> getDiary(@PathVariable Long id, @AuthenticationPrincipal User user) {
         Diary diary = diaryService.findDiaryById(id);
+
+        if (diary == null || !diary.getUser().getId().equals(user.getId())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build(); // 다이어리가 없거나 접근 권한이 없으면 예외 처리
+        }
+
         return ResponseEntity.ok(diary);
     }
 
