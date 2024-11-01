@@ -59,6 +59,7 @@ public class OutfitController {
                 .folder(folder)
                 .description(description)
                 .imageUrl(imageUrl)
+                .fileName(fileName)
                 .build();
         outfitRepository.save(outfit);
 
@@ -114,7 +115,7 @@ public class OutfitController {
 
         List<String> outfitFileNames = outfitRepository.findAllByUserId(user.getId())
                 .stream()
-                .map(Outfit::getImageUrl)
+                .map(Outfit::getFileName)
                 .collect(Collectors.toList());
 
         return new ResponseEntity<>(outfitFileNames, HttpStatus.OK);

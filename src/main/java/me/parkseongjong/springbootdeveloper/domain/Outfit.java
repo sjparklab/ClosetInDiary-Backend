@@ -30,12 +30,16 @@ public class Outfit {
     @Column(name = "image_url")
     private String imageUrl;
 
+    @Column(name = "file_name")
+    private String fileName;
+
     @Builder
-    public Outfit(User user, String category, String folder, String description, String imageUrl) {
+    public Outfit(User user, String category, String folder, String description, String imageUrl, String fileName) {
         this.user = user;
         this.category = category;
         this.folder = folder;
         this.description = description;
         this.imageUrl = imageUrl;
+        this.fileName = fileName;
     }
 }
