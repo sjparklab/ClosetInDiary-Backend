@@ -1,6 +1,9 @@
 package me.parkseongjong.springbootdeveloper.controller;
 
+import com.amazonaws.SdkClientException;
 import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.model.AmazonS3Exception;
+import com.amazonaws.services.s3.model.DeleteObjectRequest;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import me.parkseongjong.springbootdeveloper.domain.Outfit;
 import me.parkseongjong.springbootdeveloper.domain.User;
@@ -80,7 +83,11 @@ public class OutfitController {
     }
 
     @GetMapping("/image/{fileName}")
-    public ResponseEntity<Resource> getImageFromS3(@PathVariable String fileName) {
+    public ResponseEntity<Resource> getImageFromS3(@PathVariable String fileName, @AuthenticationPrincipal User user) {
+        Outfit outfit = outfitRepository.findByFileName(fileName).orElseThrow(() -> new IllegalArgumentException("Not Found " + fileName));
+        if (outfit == null || !outfit.getUser().getId().equals(user.getId())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build(); // 파일이 없거나 접근 권한이 없으면 예외 처리
+        }
         try {
             // S3에서 파일을 다운로드
             InputStream inputStream = s3Client.getObject(BUCKET_NAME, fileName).getObjectContent();
@@ -113,11 +120,45 @@ public class OutfitController {
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
 
-        List<String> outfitFileNames = outfitRepository.findAllByUserId(user.getId())
+        List<String> outfitFileNames = outfitRepository.findAllByUserId(user.getId()).orElseThrow(() -> new IllegalArgumentException("Not Found" + user))
                 .stream()
                 .map(Outfit::getFileName)
                 .collect(Collectors.toList());
 
         return new ResponseEntity<>(outfitFileNames, HttpStatus.OK);
+    }
+
+    @DeleteMapping("/image/{fileName}")
+    public ResponseEntity<String> deleteImageFromS3(@PathVariable String fileName, @AuthenticationPrincipal User user) {
+        // 파일을 찾고 권한 확인
+        Outfit outfit = outfitRepository.findByFileName(fileName)
+                .orElseThrow(() -> new IllegalArgumentException("Not Found: " + fileName));
+
+        if (outfit == null || !outfit.getUser().getId().equals(user.getId())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();  // 권한이 없거나 파일이 없을 때
+        }
+
+        try {
+            // S3에서 파일 삭제 요청
+            DeleteObjectRequest deleteObjectRequest = new DeleteObjectRequest(BUCKET_NAME, fileName);
+            s3Client.deleteObject(deleteObjectRequest);
+
+            outfitRepository.delete(outfit);
+
+            System.out.println("File deleted successfully: " + fileName);
+            return ResponseEntity.ok().body(fileName + " Delete Complete!");
+
+        } catch (AmazonS3Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("S3 Service Error: " + e.getMessage());
+
+        } catch (SdkClientException e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("SDK Client Error: " + e.getMessage());
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Unknown Error: " + e.getMessage());
+        }
     }
 }

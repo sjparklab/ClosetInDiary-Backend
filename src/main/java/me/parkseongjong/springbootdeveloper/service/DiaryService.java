@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import me.parkseongjong.springbootdeveloper.domain.Diary;
 import me.parkseongjong.springbootdeveloper.domain.User;
 import me.parkseongjong.springbootdeveloper.repository.DiaryRepository;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -19,7 +20,7 @@ public class DiaryService {
     }
 
     public List<Diary> findDiariesByUserId(Long userId) {
-        return diaryRepository.findByUserId(userId);
+        return diaryRepository.findByUserId(userId).orElseThrow(() -> new IllegalArgumentException("not found: " + userId));
     }
 
     public Diary findDiaryById(Long id) {
