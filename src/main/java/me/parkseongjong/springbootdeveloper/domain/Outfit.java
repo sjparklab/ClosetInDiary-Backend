@@ -1,5 +1,6 @@
 package me.parkseongjong.springbootdeveloper.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -14,6 +15,7 @@ public class Outfit {
     @Column(name = "id", updatable = false)
     private Long id;
 
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
@@ -27,6 +29,7 @@ public class Outfit {
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
+    @JsonIgnore
     @Column(name = "image_url")
     private String imageUrl;
 
