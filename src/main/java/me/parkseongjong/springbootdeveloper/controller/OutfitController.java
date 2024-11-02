@@ -144,4 +144,58 @@ public class OutfitController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Unknown Error: " + e.getMessage());
         }
     }
+
+    @PutMapping("/image/{id}")
+    public ResponseEntity<String> updateOutfitImage(
+            @PathVariable Long id,
+            @AuthenticationPrincipal User user,
+            @RequestParam(value = "file", required = false) MultipartFile file,
+            @RequestParam("category") String category,
+            @RequestParam("folder") String folder,
+            @RequestParam("description") String description) {
+
+        // Find the outfit by ID
+        Outfit outfit = outfitRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Not Found: " + id));
+
+        // Check if the authenticated user is the owner of the outfit
+        if (!outfit.getUser().getId().equals(user.getId())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        // If a new file is provided, delete the existing image and upload the new one
+        if (file != null) {
+            try {
+                // Delete the existing image from S3
+                DeleteObjectRequest deleteObjectRequest = new DeleteObjectRequest(BUCKET_NAME, outfit.getFileName());
+                s3Client.deleteObject(deleteObjectRequest);
+            } catch (AmazonS3Exception e) {
+                e.printStackTrace();
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error deleting old image from S3: " + e.getMessage());
+            }
+
+            // Upload the new image to S3
+            String newFileName = System.currentTimeMillis() + "_" + file.getOriginalFilename();
+            File tempFile = convertMultiPartToFile(file);
+            try {
+                s3Client.putObject(new PutObjectRequest(BUCKET_NAME, newFileName, tempFile));
+                outfit.setFileName(newFileName);
+                outfit.setImageUrl(s3Client.getUrl(BUCKET_NAME, newFileName).toString());
+            } catch (SdkClientException e) {
+                e.printStackTrace();
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error uploading new image to S3: " + e.getMessage());
+            } finally {
+                tempFile.delete(); // Delete the temporary file after upload
+            }
+        }
+
+        // Update the outfit metadata in the database (even if no new image is provided)
+        outfit.setCategory(category);
+        outfit.setFolder(folder);
+        outfit.setDescription(description);
+
+        outfitRepository.save(outfit); // Save the updated outfit
+
+        return ResponseEntity.ok("Outfit updated successfully!");
+    }
 }
