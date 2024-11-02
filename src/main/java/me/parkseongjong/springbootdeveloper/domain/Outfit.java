@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.List;
+
 @Table(name = "outfit")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
@@ -35,6 +37,10 @@ public class Outfit {
 
     @Column(name = "file_name")
     private String fileName;
+
+    @ManyToMany(mappedBy = "outfits")
+    @JsonIgnore
+    private List<Diary> diaries;
 
     @Builder
     public Outfit(User user, String category, String folder, String description, String imageUrl, String fileName) {
