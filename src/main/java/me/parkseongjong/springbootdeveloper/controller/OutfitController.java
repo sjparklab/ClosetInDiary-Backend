@@ -44,14 +44,16 @@ public class OutfitController {
         if (user == null) {
             return new ResponseEntity<>("User not authenticated", HttpStatus.UNAUTHORIZED);
         }
-        String fileName = System.currentTimeMillis() + "_" + file.getOriginalFilename();
+        String fileKey = System.currentTimeMillis() + "_" + user.getId() + "_" + file.getOriginalFilename();
+        String fileName = file.getOriginalFilename();
         File tempFile = convertMultiPartToFile(file);
-        s3Client.putObject(new PutObjectRequest(BUCKET_NAME, fileName, tempFile));
-        String imageUrl = s3Client.getUrl(BUCKET_NAME, fileName).toString();
+        s3Client.putObject(new PutObjectRequest(BUCKET_NAME, fileKey, tempFile));
+        String imageUrl = s3Client.getUrl(BUCKET_NAME, fileKey).toString();
 
         // Save outfit metadata to the database
         Outfit outfit = Outfit.builder()
                 .user(user)
+                .fileKey(fileKey)
                 .category(category)
                 .folder(folder)
                 .description(description)
@@ -83,7 +85,7 @@ public class OutfitController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build(); // 권한이 없을 경우
         }
         try {
-            InputStream inputStream = s3Client.getObject(BUCKET_NAME, outfit.getFileName()).getObjectContent();
+            InputStream inputStream = s3Client.getObject(BUCKET_NAME, outfit.getFileKey()).getObjectContent();
             byte[] imageBytes = inputStream.readAllBytes();
             ByteArrayResource resource = new ByteArrayResource(imageBytes);
 
@@ -167,20 +169,21 @@ public class OutfitController {
         if (file != null) {
             try {
                 // Delete the existing image from S3
-                DeleteObjectRequest deleteObjectRequest = new DeleteObjectRequest(BUCKET_NAME, outfit.getFileName());
+                DeleteObjectRequest deleteObjectRequest = new DeleteObjectRequest(BUCKET_NAME, outfit.getFileKey());
                 s3Client.deleteObject(deleteObjectRequest);
             } catch (AmazonS3Exception e) {
                 e.printStackTrace();
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error deleting old image from S3: " + e.getMessage());
             }
 
-            // Upload the new image to S3
-            String newFileName = System.currentTimeMillis() + "_" + file.getOriginalFilename();
+            String newFileKey = System.currentTimeMillis() + "_" + user.getId() + "_" + file.getOriginalFilename();
+            String newFileName = file.getOriginalFilename();
             File tempFile = convertMultiPartToFile(file);
             try {
-                s3Client.putObject(new PutObjectRequest(BUCKET_NAME, newFileName, tempFile));
+                s3Client.putObject(new PutObjectRequest(BUCKET_NAME, newFileKey, tempFile));
+                outfit.setFileKey(newFileKey);
                 outfit.setFileName(newFileName);
-                outfit.setImageUrl(s3Client.getUrl(BUCKET_NAME, newFileName).toString());
+                outfit.setImageUrl(s3Client.getUrl(BUCKET_NAME, newFileKey).toString());
             } catch (SdkClientException e) {
                 e.printStackTrace();
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error uploading new image to S3: " + e.getMessage());

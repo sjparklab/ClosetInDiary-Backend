@@ -39,7 +39,6 @@ public class Diary {
             joinColumns = @JoinColumn(name = "diary_id"),
             inverseJoinColumns = @JoinColumn(name = "outfit_id")
     )
-
     private List<Outfit> outfits; // 선택된 착장 목록을 저장할 리스트
 
     @Builder

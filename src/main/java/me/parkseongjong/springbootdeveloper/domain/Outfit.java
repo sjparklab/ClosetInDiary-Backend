@@ -32,6 +32,10 @@ public class Outfit {
     private String description;
 
     @JsonIgnore
+    @Column(name = "file_key")
+    private String fileKey;
+
+    @JsonIgnore
     @Column(name = "image_url")
     private String imageUrl;
 
@@ -43,8 +47,9 @@ public class Outfit {
     private List<Diary> diaries;
 
     @Builder
-    public Outfit(User user, String category, String folder, String description, String imageUrl, String fileName) {
+    public Outfit(User user, String fileKey, String category, String folder, String description, String imageUrl, String fileName) {
         this.user = user;
+        this.fileKey = fileKey;
         this.category = category;
         this.folder = folder;
         this.description = description;
