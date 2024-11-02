@@ -5,11 +5,10 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
 import com.amazonaws.services.s3.model.DeleteObjectRequest;
 import com.amazonaws.services.s3.model.PutObjectRequest;
+import lombok.RequiredArgsConstructor;
 import me.parkseongjong.springbootdeveloper.domain.Outfit;
 import me.parkseongjong.springbootdeveloper.domain.User;
 import me.parkseongjong.springbootdeveloper.repository.OutfitRepository;
-import me.parkseongjong.springbootdeveloper.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
@@ -25,20 +24,14 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/outfits")
+@RequiredArgsConstructor
 public class OutfitController {
+    private final AmazonS3 s3Client;
 
-    @Autowired
-    private AmazonS3 s3Client;
-
-    @Autowired
-    private OutfitRepository outfitRepository;
-
-    @Autowired
-    private UserRepository userRepository;
+    private final OutfitRepository outfitRepository;
 
     private static final String BUCKET_NAME = "closetindiary-image-bucket";
 
