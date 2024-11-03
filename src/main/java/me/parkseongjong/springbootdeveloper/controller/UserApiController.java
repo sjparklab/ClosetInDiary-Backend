@@ -1,6 +1,7 @@
 package me.parkseongjong.springbootdeveloper.controller;
 
 import jakarta.servlet.http.HttpSession;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import me.parkseongjong.springbootdeveloper.config.jwt.TokenProvider;
 import me.parkseongjong.springbootdeveloper.domain.RefreshToken;

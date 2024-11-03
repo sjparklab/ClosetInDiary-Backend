@@ -1,6 +1,7 @@
 package me.parkseongjong.springbootdeveloper.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -40,6 +41,26 @@ public class User implements UserDetails {
 
     @Column(name = "public_settings")
     private String publicSettings;
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "sender")
+    private List<FriendRequest> sentFriendRequests;
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "receiver")
+    private List<FriendRequest> receivedFriendRequests;
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "sender")
+    private List<Message> sentMessages;
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "receiver")
+    private List<Message> receivedMessages;
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "user")
+    private List<Status> statuses;
 
     @Builder
     public User(String username, String email, String password, String name, String profilePicture, String publicSettings) {
