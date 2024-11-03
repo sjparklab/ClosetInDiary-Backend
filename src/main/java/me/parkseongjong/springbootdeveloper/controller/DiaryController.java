@@ -69,4 +69,16 @@ public class DiaryController {
         Diary updatedDiary = diaryService.updateDiary(updateDiaryRequest);
         return ResponseEntity.ok(updatedDiary);
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<String> deleteDiary(@AuthenticationPrincipal User user, @PathVariable Long id) {
+        Diary diary = diaryService.findDiaryById(id);
+
+        if (diary == null || !diary.getUser().getId().equals(user.getId())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build(); // 다이어리가 없거나 접근 권한이 없으면 예외 처리
+        }
+
+        diaryService.deleteDiary(id);
+        return ResponseEntity.ok("id " + id + ": Diary Deleted Complete!");
+    }
 }

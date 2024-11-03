@@ -71,4 +71,12 @@ public class DiaryService {
 
         return diary;
     }
+
+    @Transactional
+    public void deleteDiary(Long id) {
+        Diary diary = diaryRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Diary not found with id: " + id));
+
+        diaryRepository.delete(diary);
+    }
 }
