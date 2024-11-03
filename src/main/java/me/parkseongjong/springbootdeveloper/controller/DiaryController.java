@@ -4,6 +4,8 @@ import lombok.RequiredArgsConstructor;
 import me.parkseongjong.springbootdeveloper.domain.Diary;
 import me.parkseongjong.springbootdeveloper.domain.User;
 import me.parkseongjong.springbootdeveloper.dto.DiaryRequest;
+import me.parkseongjong.springbootdeveloper.dto.UpdateDiaryRequest;
+import me.parkseongjong.springbootdeveloper.repository.DiaryRepository;
 import me.parkseongjong.springbootdeveloper.service.DiaryService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -52,5 +54,19 @@ public class DiaryController {
         diaryRequest.setUser(user); // 로그인된 사용자 정보를 다이어리에 설정
         Diary createdDiary = diaryService.createDiary(diaryRequest);
         return ResponseEntity.ok(createdDiary);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Diary> modifyDiary(@AuthenticationPrincipal User user, @PathVariable Long id, @RequestBody UpdateDiaryRequest updateDiaryRequest) {
+        Diary diary = diaryService.findDiaryById(id);
+
+        if (diary == null || !diary.getUser().getId().equals(user.getId())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build(); // 다이어리가 없거나 접근 권한이 없으면 예외 처리
+        }
+
+        updateDiaryRequest.setId(id);
+        updateDiaryRequest.setUser(user); // 로그인된 사용자 정보를 다이어리에 설정
+        Diary updatedDiary = diaryService.updateDiary(updateDiaryRequest);
+        return ResponseEntity.ok(updatedDiary);
     }
 }
