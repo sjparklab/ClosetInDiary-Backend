@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import me.parkseongjong.springbootdeveloper.domain.Outfit;
 import me.parkseongjong.springbootdeveloper.domain.User;
 import me.parkseongjong.springbootdeveloper.repository.OutfitRepository;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
@@ -23,6 +24,8 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 @RestController
@@ -78,8 +81,10 @@ public class OutfitController {
         return convFile;
     }
 
+    @Cacheable(value = "outfitImages", key = "#id")
     @GetMapping("/image/{id}")
     public ResponseEntity<Resource> getImageFromS3(@PathVariable Long id, @AuthenticationPrincipal User user) {
+        System.out.println("Fetching image from S3 for id: " + id);
         Outfit outfit = outfitRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Not Found: " + id));
         if (!outfit.getUser().getId().equals(user.getId())) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build(); // 권한이 없을 경우
@@ -90,7 +95,8 @@ public class OutfitController {
             ByteArrayResource resource = new ByteArrayResource(imageBytes);
 
             HttpHeaders headers = new HttpHeaders();
-            headers.add(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=" + outfit.getFileName());
+            String encodedFileName = URLEncoder.encode(outfit.getFileName(), StandardCharsets.UTF_8.toString()).replaceAll("\\+", "%20");
+            headers.add(HttpHeaders.CONTENT_DISPOSITION, "inline; filename*=UTF-8''" + encodedFileName);
 
             return ResponseEntity.ok()
                     .headers(headers)
