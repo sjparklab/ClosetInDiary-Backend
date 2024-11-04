@@ -1,14 +1,14 @@
 package me.parkseongjong.springbootdeveloper.domain;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
 @Getter
 @Setter
 @Entity
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Message {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -30,4 +30,13 @@ public class Message {
 
     @Column(nullable = false)
     private boolean isRead;
+
+    @Builder
+    public Message(User sender, User receiver, String content, LocalDateTime timestamp, boolean isRead) {
+        this.sender = sender;
+        this.receiver = receiver;
+        this.content = content;
+        this.timestamp = timestamp;
+        this.isRead = isRead;
+    }
 }
