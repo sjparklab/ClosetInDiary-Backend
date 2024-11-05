@@ -1,5 +1,6 @@
 package me.parkseongjong.springbootdeveloper.service;
 
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import me.parkseongjong.springbootdeveloper.domain.FriendRequest;
 import me.parkseongjong.springbootdeveloper.domain.FriendRequestStatus;
@@ -19,6 +20,18 @@ public class FriendRequestService {
     private final UserRepository userRepository;
 
     public void sendFriendRequest(Long senderId, Long receiverId) {
+        boolean requestExists = friendRequestRepository.existsBySenderIdAndReceiverIdAndStatus(senderId, receiverId, FriendRequestStatus.PENDING);
+        boolean alreadyFriends = friendRequestRepository.existsBySenderIdAndReceiverIdAndStatus(senderId, receiverId, FriendRequestStatus.ACCEPTED) ||
+                friendRequestRepository.existsBySenderIdAndReceiverIdAndStatus(receiverId, senderId, FriendRequestStatus.ACCEPTED);
+
+        if (requestExists) {
+            throw new IllegalArgumentException("이미 보낸 친구 요청이 있습니다.");
+        }
+
+        if (alreadyFriends) {
+            throw new IllegalArgumentException("이미 친구입니다.");
+        }
+
         User sender = userRepository.findById(senderId)
                 .orElseThrow(() -> new UsernameNotFoundException("Sender not found"));
         User receiver = userRepository.findById(receiverId)
@@ -32,6 +45,7 @@ public class FriendRequestService {
         friendRequestRepository.save(request);
     }
 
+    @Transactional
     public boolean acceptFriendRequest(Long userId, Long requestId) {
         FriendRequest request = friendRequestRepository.findById(requestId)
                 .orElseThrow(() -> new IllegalArgumentException("Request not found"));
@@ -43,6 +57,7 @@ public class FriendRequestService {
         return false;
     }
 
+    @Transactional
     public boolean declineFriendRequest(Long userId, Long requestId) {
         FriendRequest request = friendRequestRepository.findById(requestId)
                 .orElseThrow(() -> new IllegalArgumentException("Request not found"));
