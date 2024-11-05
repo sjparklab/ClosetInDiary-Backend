@@ -5,7 +5,6 @@ import me.parkseongjong.springbootdeveloper.domain.Diary;
 import me.parkseongjong.springbootdeveloper.domain.User;
 import me.parkseongjong.springbootdeveloper.dto.DiaryRequest;
 import me.parkseongjong.springbootdeveloper.dto.UpdateDiaryRequest;
-import me.parkseongjong.springbootdeveloper.repository.DiaryRepository;
 import me.parkseongjong.springbootdeveloper.service.DiaryService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
