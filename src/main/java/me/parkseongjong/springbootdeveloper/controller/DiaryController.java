@@ -22,12 +22,17 @@ public class DiaryController {
 
     // 특정 유저의 다이어리 조회 (로그인된 사용자만)
     @GetMapping
-    public ResponseEntity<List<Diary>> getMyDiaries(@AuthenticationPrincipal User user) {
+    public ResponseEntity<List<Diary>> getMyDiaries(
+            @AuthenticationPrincipal User user,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate,
+            @RequestParam(required = false, defaultValue = "latest") String sort) {
+
         if (user == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build(); // 유저 정보가 없으면 예외 처리
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        List<Diary> diaries = diaryService.findDiariesByUserId(user.getId());
+        List<Diary> diaries = diaryService.findDiariesByUserIdAndDateRange(user.getId(), startDate, endDate, sort);
         return ResponseEntity.ok(diaries);
     }
 

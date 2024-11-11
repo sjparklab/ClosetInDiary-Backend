@@ -9,9 +9,13 @@ import me.parkseongjong.springbootdeveloper.dto.DiaryRequest;
 import me.parkseongjong.springbootdeveloper.dto.UpdateDiaryRequest;
 import me.parkseongjong.springbootdeveloper.repository.DiaryRepository;
 import me.parkseongjong.springbootdeveloper.repository.OutfitRepository;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -27,13 +31,46 @@ public class DiaryService {
     }
 
     public List<Diary> findDiariesByUserId(Long userId) {
-        return diaryRepository.findByUserId(userId).orElseThrow(() -> new IllegalArgumentException("not found: " + userId));
+        return diaryRepository.findByUserId(userId, Sort.by(Sort.Direction.DESC, "date")).orElseThrow(() -> new IllegalArgumentException("not found: " + userId));
     }
 
     public Diary findDiaryById(Long id) {
         return diaryRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Diary not found"));
     }
 
+    public List<Diary> findDiariesByUserIdAndDateRange(Long userId, String startDateStr, String endDateStr, String sort) {
+        LocalDate startDate = null;
+        LocalDate endDate = null;
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
+        try {
+            if (startDateStr != null) {
+                startDate = LocalDate.parse(startDateStr, formatter);
+            }
+            if (endDateStr != null) {
+                endDate = LocalDate.parse(endDateStr, formatter);
+            }
+        } catch (DateTimeParseException e) {
+            throw new IllegalArgumentException("Invalid date format. Please use yyyy-MM-dd.");
+        }
+
+        // 날짜 범위 검증
+        if (startDate != null && endDate != null && startDate.isAfter(endDate)) {
+            throw new IllegalArgumentException("Start date must be before end date.");
+        }
+
+        Sort sortOption = Sort.by(Sort.Direction.DESC, "date");
+        if ("oldest".equalsIgnoreCase(sort)) {
+            sortOption = Sort.by(Sort.Direction.ASC, "date");
+        }
+
+        if (startDate != null && endDate != null) {
+            return diaryRepository.findByUserIdAndDateBetween(userId, startDate, endDate, sortOption).orElseThrow(() -> new IllegalArgumentException("not found: " + userId));
+        } else {
+            return diaryRepository.findByUserId(userId, sortOption).orElseThrow(() -> new IllegalArgumentException("not found: " + userId));
+        }
+    }
     @Transactional
     public Diary createDiary(DiaryRequest diaryRequest) {
         Diary diary = Diary.builder()

@@ -22,8 +22,9 @@ public class Outfit {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "category", nullable = false)
-    private String category;
+    private OutfitCategory category;
 
     @Column(name = "folder")
     private String folder;
@@ -47,7 +48,7 @@ public class Outfit {
     private List<Diary> diaries;
 
     @Builder
-    public Outfit(User user, String fileKey, String category, String folder, String description, String imageUrl, String fileName) {
+    public Outfit(User user, String fileKey, OutfitCategory category, String folder, String description, String imageUrl, String fileName) {
         this.user = user;
         this.fileKey = fileKey;
         this.category = category;

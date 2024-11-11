@@ -7,6 +7,7 @@ import com.amazonaws.services.s3.model.DeleteObjectRequest;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import lombok.RequiredArgsConstructor;
 import me.parkseongjong.springbootdeveloper.domain.Outfit;
+import me.parkseongjong.springbootdeveloper.domain.OutfitCategory;
 import me.parkseongjong.springbootdeveloper.domain.User;
 import me.parkseongjong.springbootdeveloper.repository.OutfitRepository;
 import org.springframework.cache.annotation.Cacheable;
@@ -29,7 +30,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/outfits")
+@RequestMapping("/api/closet")
 @RequiredArgsConstructor
 public class OutfitController {
     private final AmazonS3 s3Client;
@@ -40,7 +41,7 @@ public class OutfitController {
 
     @PostMapping("/upload")
     public ResponseEntity<String> uploadOutfitImage(@RequestParam("file") MultipartFile file,
-                                                    @RequestParam("category") String category,
+                                                    @RequestParam("category") OutfitCategory category,
                                                     @RequestParam("folder") String folder,
                                                     @RequestParam("description") String description,
                                                     @AuthenticationPrincipal User user) {
@@ -110,14 +111,27 @@ public class OutfitController {
         }
     }
 
-    @GetMapping("/list")
-    public ResponseEntity<List<Outfit>> getUserOutfitList(@AuthenticationPrincipal User user) {
+    @GetMapping("/{category}")
+    public ResponseEntity<List<Outfit>> getUserOutfitList(@PathVariable String category, @AuthenticationPrincipal User user) {
         if (user == null) {
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
 
-        List<Outfit> outfitList = outfitRepository.findAllByUserId(user.getId())
-                .orElseThrow(() -> new IllegalArgumentException("Not Found for user: " + user.getId()));
+        List<Outfit> outfitList;
+
+        if ("All".equalsIgnoreCase(category)) {
+            // 카테고리가 "All"일 경우: 유저의 모든 옷 정보 반환
+            outfitList = outfitRepository.findAllByUserId(user.getId())
+                    .orElseThrow(() -> new IllegalArgumentException("No outfits found for user: " + user.getId()));
+        } else if (OutfitCategory.contains(category)) {
+            // 특정 카테고리에 대한 옷 정보 반환
+            OutfitCategory outfitCategory = OutfitCategory.valueOf(category.toUpperCase()); // 문자열을 Enum으로 변환
+            outfitList = outfitRepository.findAllByUserIdAndCategory(user.getId(), outfitCategory)
+                    .orElseThrow(() -> new IllegalArgumentException("No outfits found for user: " + user.getId() + " and category: " + category));
+        } else {
+            // 카테고리가 유효하지 않은 경우 예외 처리
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
 
         return new ResponseEntity<>(outfitList, HttpStatus.OK);
     }
@@ -158,7 +172,7 @@ public class OutfitController {
             @PathVariable Long id,
             @AuthenticationPrincipal User user,
             @RequestParam(value = "file", required = false) MultipartFile file,
-            @RequestParam("category") String category,
+            @RequestParam("category") OutfitCategory category,
             @RequestParam("folder") String folder,
             @RequestParam("description") String description) {
 
