@@ -41,13 +41,16 @@ public class OutfitController {
 
     @PostMapping("/upload")
     public ResponseEntity<String> uploadOutfitImage(@RequestParam("file") MultipartFile file,
-                                                    @RequestParam("category") OutfitCategory category,
+                                                    @RequestParam("category") String scategory,
                                                     @RequestParam("folder") String folder,
                                                     @RequestParam("description") String description,
                                                     @AuthenticationPrincipal User user) {
         if (user == null) {
             return new ResponseEntity<>("User not authenticated", HttpStatus.UNAUTHORIZED);
         }
+
+        OutfitCategory category = OutfitCategory.valueOf(scategory.toUpperCase()); //
+
         String fileKey = System.currentTimeMillis() + "_" + user.getId() + "_" + file.getOriginalFilename();
         String fileName = file.getOriginalFilename();
         File tempFile = convertMultiPartToFile(file);
