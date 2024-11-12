@@ -61,3 +61,4 @@ public class FriendRequestController {
         return ResponseEntity.ok(requests);
     }
 }
+
