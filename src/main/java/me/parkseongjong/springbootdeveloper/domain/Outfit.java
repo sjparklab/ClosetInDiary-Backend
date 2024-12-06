@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Table(name = "outfit")
@@ -26,11 +27,17 @@ public class Outfit {
     @Column(name = "category", nullable = false)
     private OutfitCategory category;
 
-    @Column(name = "folder")
-    private String folder;
+    @Column(nullable = false, length = 500)
+    private String reason; // 구매 계기
 
-    @Column(name = "description", columnDefinition = "TEXT")
-    private String description;
+    @Column(nullable = false)
+    private LocalDate purchaseDate; // 구매일
+
+    @Column(nullable = false, length = 100)
+    private String brand; // 브랜드
+
+    @Column(nullable = false, length = 50)
+    private String size; // 사이즈
 
     @JsonIgnore
     @Column(name = "file_key")
@@ -48,12 +55,14 @@ public class Outfit {
     private List<Diary> diaries;
 
     @Builder
-    public Outfit(User user, String fileKey, OutfitCategory category, String folder, String description, String imageUrl, String fileName) {
+    public Outfit(User user, String fileKey, OutfitCategory category, String reason, LocalDate purchaseDate,String brand, String size, String imageUrl, String fileName) {
         this.user = user;
         this.fileKey = fileKey;
         this.category = category;
-        this.folder = folder;
-        this.description = description;
+        this.reason = reason;
+        this.purchaseDate = purchaseDate;
+        this.brand = brand;
+        this.size = size;
         this.imageUrl = imageUrl;
         this.fileName = fileName;
     }

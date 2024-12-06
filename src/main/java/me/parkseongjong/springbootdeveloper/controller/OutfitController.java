@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -40,39 +41,51 @@ public class OutfitController {
     private static final String BUCKET_NAME = "closetindiary-image-bucket";
 
     @PostMapping("/upload")
-    public ResponseEntity<String> uploadOutfitImage(@RequestParam("file") MultipartFile file,
-                                                    @RequestParam("category") String scategory,
-                                                    @RequestParam("folder") String folder,
-                                                    @RequestParam("description") String description,
-                                                    @AuthenticationPrincipal User user) {
+    public ResponseEntity<String> uploadOutfit(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam("category") String scategory,
+            @RequestParam("reason") String reason,
+            @RequestParam("purchaseDate") String purchaseDate,
+            @RequestParam("brand") String brand,
+            @RequestParam("size") String size,
+            @AuthenticationPrincipal User user) {
+
         if (user == null) {
             return new ResponseEntity<>("User not authenticated", HttpStatus.UNAUTHORIZED);
         }
 
-        OutfitCategory category = OutfitCategory.valueOf(scategory.toUpperCase()); //
+        // 카테고리 값 검증
+        OutfitCategory category;
+        try {
+            category = OutfitCategory.valueOf(scategory.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return new ResponseEntity<>("Invalid category", HttpStatus.BAD_REQUEST);
+        }
 
+        // S3 파일 업로드 처리
         String fileKey = System.currentTimeMillis() + "_" + user.getId() + "_" + file.getOriginalFilename();
         String fileName = file.getOriginalFilename();
         File tempFile = convertMultiPartToFile(file);
         s3Client.putObject(new PutObjectRequest(BUCKET_NAME, fileKey, tempFile));
         String imageUrl = s3Client.getUrl(BUCKET_NAME, fileKey).toString();
 
-        // Save outfit metadata to the database
+        // Outfit 데이터베이스 저장
         Outfit outfit = Outfit.builder()
                 .user(user)
                 .fileKey(fileKey)
                 .category(category)
-                .folder(folder)
-                .description(description)
+                .reason(reason)
+                .purchaseDate(LocalDate.parse(purchaseDate)) // 문자열을 LocalDate로 변환
+                .brand(brand)
+                .size(size)
                 .imageUrl(imageUrl)
                 .fileName(fileName)
                 .build();
         outfitRepository.save(outfit);
 
-        // Delete the temporary file after uploading
-        tempFile.delete();
+        tempFile.delete(); // 임시 파일 삭제
 
-        return new ResponseEntity<>(HttpStatus.OK);
+        return new ResponseEntity<>("Outfit uploaded successfully", HttpStatus.OK);
     }
 
     private File convertMultiPartToFile(MultipartFile file) {
@@ -84,7 +97,6 @@ public class OutfitController {
         }
         return convFile;
     }
-
     @Cacheable(value = "outfitImages", key = "#id")
     @GetMapping("/image/{id}")
     public ResponseEntity<Resource> getImageFromS3(@PathVariable Long id, @AuthenticationPrincipal User user) {
@@ -177,7 +189,11 @@ public class OutfitController {
             @RequestParam(value = "file", required = false) MultipartFile file,
             @RequestParam("category") OutfitCategory category,
             @RequestParam("folder") String folder,
-            @RequestParam("description") String description) {
+            @RequestParam("description") String description,
+            @RequestParam("reason") String reason,
+            @RequestParam("purchaseDate") String purchaseDate,
+            @RequestParam("brand") String brand,
+            @RequestParam("size") String size) {
 
         // Find the outfit by ID
         Outfit outfit = outfitRepository.findById(id)
@@ -217,8 +233,10 @@ public class OutfitController {
 
         // Update the outfit metadata in the database (even if no new image is provided)
         outfit.setCategory(category);
-        outfit.setFolder(folder);
-        outfit.setDescription(description);
+        outfit.setReason(reason);
+        outfit.setPurchaseDate(LocalDate.parse(purchaseDate)); // Convert String to LocalDate
+        outfit.setBrand(brand);
+        outfit.setSize(size);
 
         outfitRepository.save(outfit); // Save the updated outfit
 
