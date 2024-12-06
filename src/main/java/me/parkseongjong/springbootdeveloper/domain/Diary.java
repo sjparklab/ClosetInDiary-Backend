@@ -26,27 +26,39 @@ public class Diary {
     @Column(name = "date", nullable = false)
     private LocalDate date;
 
-    @Column(name = "emotion")
-    private String emotion;
+    @Column(name = "title")
+    private String title;
 
     @Column(name = "content", columnDefinition = "TEXT")
     private String content;
 
-    // Diary와 Outfit의 다대다 관계 설정
+    // 메인 이미지 경로
+    @Column(name = "main_image_path")
+    private String mainImagePath;
+
+    // 다중 이미지 경로 목록
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "diary_sub_images", joinColumns = @JoinColumn(name = "diary_id"))
+    @Column(name = "image_path")
+    private List<String> subImagePaths;
+
+    // 다시 outfits 리스트 추가
     @ManyToMany
     @JoinTable(
             name = "diary_outfit",
             joinColumns = @JoinColumn(name = "diary_id"),
             inverseJoinColumns = @JoinColumn(name = "outfit_id")
     )
-    private List<Outfit> outfits; // 선택된 착장 목록을 저장할 리스트
+    private List<Outfit> outfits;
 
     @Builder
-    public Diary(User user, LocalDate date, String emotion, List<Outfit> outfits, String content) {
+    public Diary(User user, LocalDate date, String title, String content, String mainImagePath, List<String> subImagePaths) {
         this.user = user;
         this.date = date;
-        this.emotion = emotion;
-        this.outfits = outfits;
+        this.title = this.title;
         this.content = content;
+        this.mainImagePath = mainImagePath;
+        this.subImagePaths = subImagePaths;
+        this.outfits = outfits;
     }
 }

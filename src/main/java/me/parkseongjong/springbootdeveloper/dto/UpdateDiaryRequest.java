@@ -13,7 +13,7 @@ public class UpdateDiaryRequest {
     private Long id;
     private User user;
     private LocalDate date;
-    private String emotion;
+    private String title;
     private String content;
     private List<Long> outfitIds;
 }

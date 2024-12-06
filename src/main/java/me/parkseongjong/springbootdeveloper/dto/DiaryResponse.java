@@ -4,7 +4,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import me.parkseongjong.springbootdeveloper.domain.User;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -13,11 +12,12 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class DiaryRequest {
-    private String title;
+public class DiaryResponse {
+    private Long id;
+    private LocalDate date;
+    private String emotion;
     private String content;
-    private String date;
-    private User user;
-    private String mainImagePath;       // 추가
-    private List<String> subImagePaths; // 추가
+    private String mainImagePath;
+    private List<String> subImagePaths;
+    // user 정보나 다른 연관 엔티티 정보가 필요하다면 추가 가능
 }

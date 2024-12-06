@@ -50,8 +50,8 @@ public class Outfit {
     @Column(name = "file_name")
     private String fileName;
 
+    // Diary 엔티티와 양방향 매핑
     @ManyToMany(mappedBy = "outfits")
-    @JsonIgnore
     private List<Diary> diaries;
 
     @Builder

@@ -3,39 +3,35 @@ package me.parkseongjong.springbootdeveloper.service;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import me.parkseongjong.springbootdeveloper.domain.Diary;
-import me.parkseongjong.springbootdeveloper.domain.Outfit;
-import me.parkseongjong.springbootdeveloper.domain.User;
 import me.parkseongjong.springbootdeveloper.dto.DiaryRequest;
 import me.parkseongjong.springbootdeveloper.dto.UpdateDiaryRequest;
 import me.parkseongjong.springbootdeveloper.repository.DiaryRepository;
-import me.parkseongjong.springbootdeveloper.repository.OutfitRepository;
 import org.springframework.data.domain.Sort;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class DiaryService {
 
     private final DiaryRepository diaryRepository;
-    private final OutfitRepository outfitRepository;
 
     public List<Diary> findAllDiaries() {
         return diaryRepository.findAll();
     }
 
     public List<Diary> findDiariesByUserId(Long userId) {
-        return diaryRepository.findByUserId(userId, Sort.by(Sort.Direction.DESC, "date")).orElseThrow(() -> new IllegalArgumentException("not found: " + userId));
+        return diaryRepository.findByUserId(userId, Sort.by(Sort.Direction.DESC, "date"))
+                .orElseThrow(() -> new IllegalArgumentException("not found: " + userId));
     }
 
     public Diary findDiaryById(Long id) {
-        return diaryRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Diary not found"));
+        return diaryRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Diary not found"));
     }
 
     public List<Diary> findDiariesByUserIdAndDateRange(Long userId, String startDateStr, String endDateStr, String sort) {
@@ -66,45 +62,42 @@ public class DiaryService {
         }
 
         if (startDate != null && endDate != null) {
-            return diaryRepository.findByUserIdAndDateBetween(userId, startDate, endDate, sortOption).orElseThrow(() -> new IllegalArgumentException("not found: " + userId));
+            return diaryRepository.findByUserIdAndDateBetween(userId, startDate, endDate, sortOption)
+                    .orElseThrow(() -> new IllegalArgumentException("not found: " + userId));
         } else {
-            return diaryRepository.findByUserId(userId, sortOption).orElseThrow(() -> new IllegalArgumentException("not found: " + userId));
+            return diaryRepository.findByUserId(userId, sortOption)
+                    .orElseThrow(() -> new IllegalArgumentException("not found: " + userId));
         }
     }
+
     @Transactional
     public Diary createDiary(DiaryRequest diaryRequest) {
+        // date 문자열 -> LocalDate 변환
+        LocalDate parsedDate = LocalDate.parse(diaryRequest.getDate(), DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+
         Diary diary = Diary.builder()
-                .date(diaryRequest.getDate())
+                .date(parsedDate)
                 .user(diaryRequest.getUser())
-                .emotion(diaryRequest.getEmotion())
+                .title(diaryRequest.getTitle())
                 .content(diaryRequest.getContent())
+                .mainImagePath(diaryRequest.getMainImagePath())
+                .subImagePaths(diaryRequest.getSubImagePaths())
                 .build();
 
-        // outfitIds를 통해 Outfit 객체 목록을 가져와서 다이어리에 추가
-        List<Outfit> outfits = diaryRequest.getOutfitIds().stream()
-                .map(outfitRepository::findById)
-                .flatMap(optionalOutfit -> optionalOutfit.stream()) // Optional이 값을 가진 경우에만 스트림으로 변환
-                .collect(Collectors.toList());
-
-        diary.setOutfits(outfits);
+        // outfits 관련 로직 제거
 
         return diaryRepository.save(diary);
     }
 
     @Transactional
     public Diary updateDiary(UpdateDiaryRequest updateDiaryRequest) {
-        Diary diary = diaryRepository.findById(updateDiaryRequest.getId()).orElseThrow(() -> new IllegalArgumentException("Diary not found"));
-        diary.setDate(updateDiaryRequest.getDate());
-        diary.setEmotion(updateDiaryRequest.getEmotion());
+        Diary diary = diaryRepository.findById(updateDiaryRequest.getId())
+                .orElseThrow(() -> new IllegalArgumentException("Diary not found"));
+
+        diary.setTitle(updateDiaryRequest.getTitle());
         diary.setContent(updateDiaryRequest.getContent());
 
-        // outfitIds를 통해 Outfit 객체 목록을 가져와서 다이어리에 추가
-        List<Outfit> outfits = updateDiaryRequest.getOutfitIds().stream()
-                .map(outfitRepository::findById)
-                .flatMap(optionalOutfit -> optionalOutfit.stream()) // Optional이 값을 가진 경우에만 스트림으로 변환
-                .collect(Collectors.toList());
-
-        diary.setOutfits(outfits);
+        // outfits 관련 로직 제거
 
         return diary;
     }
