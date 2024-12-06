@@ -9,10 +9,15 @@ import me.parkseongjong.springbootdeveloper.domain.User;
 import me.parkseongjong.springbootdeveloper.dto.LoginRequest;
 import me.parkseongjong.springbootdeveloper.dto.SignupRequest;
 import me.parkseongjong.springbootdeveloper.dto.UserDataResponse;
+import me.parkseongjong.springbootdeveloper.dto.UserResponse;
+import me.parkseongjong.springbootdeveloper.service.ImageService;
 import me.parkseongjong.springbootdeveloper.service.RefreshTokenService;
 import me.parkseongjong.springbootdeveloper.service.TokenService;
 import me.parkseongjong.springbootdeveloper.service.UserService;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -21,9 +26,14 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.net.http.HttpHeaders;
 import java.time.Duration;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,7 +48,7 @@ public class UserApiController {
     private final AuthenticationManagerBuilder authenticationManagerBuilder;
     private final TokenProvider tokenProvider;
     private final RefreshTokenService refreshTokenService;
-
+    private final ImageService imageService;
     @PostMapping("/login")
     public ResponseEntity<Map<String, String>> login(@RequestBody LoginRequest loginRequest, HttpSession session) {
         try {
@@ -77,11 +87,72 @@ public class UserApiController {
     }
 
     @GetMapping("/user-data")
-    public ResponseEntity<?> receiveUserData(@AuthenticationPrincipal User user) {
+    public ResponseEntity<?> getUserInfo(@AuthenticationPrincipal User user) {
+        if (user == null) {
+            return ResponseEntity.status(401).body("User not authenticated");
+        }
+
+        return ResponseEntity.ok(new UserResponse(
+                user.getId(),
+                user.getUsername(),
+                user.getEmail(),
+                user.getName(),
+                user.getOnelineInfo(),
+                null // 이미지 제외
+        ));
+    }
+
+    @GetMapping("/user-profile-picture")
+    public ResponseEntity<?> getProfilePicture(@AuthenticationPrincipal User user) {
+        if (user == null) {
+            return ResponseEntity.status(401).body("User not authenticated");
+        }
+
+        try {
+            String fileKey = user.getProfilePicture();
+            byte[] imageData = imageService.getImageFromS3(fileKey);
+
+            return ResponseEntity.ok()
+                    .header("Content-Type", "image/jpeg")
+                    .body(imageData);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Failed to retrieve profile picture");
+        }
+    }
+
+    @PutMapping("/user-data")
+    public ResponseEntity<?> updateUserProfile(
+            @RequestParam(value = "file", required = false) MultipartFile file,
+            @RequestParam(value = "name", required = false) String name,
+            @RequestParam(value = "intro", required = false) String intro,
+            @AuthenticationPrincipal User user) {
+
         if (user == null) {
             return new ResponseEntity<>("User not authenticated", HttpStatus.UNAUTHORIZED);
         }
 
-        return ResponseEntity.ok(user);
+        try {
+            // 이미지 업로드
+            if (file != null && !file.isEmpty()) {
+                String imageUrl = imageService.uploadFileToS3(file, user.getId().toString());
+                user.setProfilePicture(imageUrl);
+            }
+
+            // 다른 필드 업데이트
+            if (name != null) {
+                user.setName(name);
+            }
+            if (intro != null) {
+                user.setOnelineInfo(intro);
+            }
+
+            userService.putUser(user);
+
+            return ResponseEntity.ok("Profile updated successfully");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to update profile");
+        }
     }
 }

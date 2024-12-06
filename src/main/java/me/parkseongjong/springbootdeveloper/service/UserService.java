@@ -47,4 +47,8 @@ public class UserService {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
     }
+
+    public User putUser(User user) {
+        return userRepository.save(user);
+    }
 }

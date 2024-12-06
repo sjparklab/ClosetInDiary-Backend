@@ -3,10 +3,7 @@ package me.parkseongjong.springbootdeveloper.domain;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -17,6 +14,7 @@ import java.util.List;
 @Table(name="users")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
+@Setter
 @Entity
 public class User implements UserDetails {
     @Id
@@ -35,6 +33,9 @@ public class User implements UserDetails {
 
     @Column(name = "name")
     private String name;
+
+    @Column(name = "onelineInfo")
+    private String onelineInfo;
 
     @Column(name = "profile_picture")
     private String profilePicture;
