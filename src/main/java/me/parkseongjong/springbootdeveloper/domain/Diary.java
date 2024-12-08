@@ -55,7 +55,7 @@ public class Diary {
     public Diary(User user, LocalDate date, String title, String content, String mainImagePath, List<String> subImagePaths) {
         this.user = user;
         this.date = date;
-        this.title = this.title;
+        this.title = title;
         this.content = content;
         this.mainImagePath = mainImagePath;
         this.subImagePaths = subImagePaths;

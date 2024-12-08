@@ -23,7 +23,7 @@ public class ImageService {
 
     private static final String BUCKET_NAME = "closetindiary-image-bucket";
     public String uploadFileToS3(MultipartFile file, String userId) {
-        String fileKey = "user_" + userId + "/" + System.currentTimeMillis() + "_" + file.getOriginalFilename();
+        String fileKey = "user_" + userId + "_" + System.currentTimeMillis() + "_" + file.getOriginalFilename();
         try {
             ObjectMetadata metadata = new ObjectMetadata();
             metadata.setContentLength(file.getSize());
