@@ -151,6 +151,18 @@ public class OutfitController {
         return new ResponseEntity<>(outfitList, HttpStatus.OK);
     }
 
+    @GetMapping("/edit/{id}")
+    public ResponseEntity<Outfit> getUserOutfitData(@PathVariable Long id, @AuthenticationPrincipal User user) {
+        if (user == null) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
+
+        Outfit outfitData = outfitRepository.findById(id)
+                    .orElseThrow(() -> new IllegalArgumentException("No outfits found for user: " + id));
+
+        return new ResponseEntity<>(outfitData, HttpStatus.OK);
+    }
+
     @DeleteMapping("/image/{id}")
     public ResponseEntity<String> deleteImageFromS3(@PathVariable Long id, @AuthenticationPrincipal User user) {
         Outfit outfit = outfitRepository.findById(id)
@@ -188,8 +200,6 @@ public class OutfitController {
             @AuthenticationPrincipal User user,
             @RequestParam(value = "file", required = false) MultipartFile file,
             @RequestParam("category") OutfitCategory category,
-            @RequestParam("folder") String folder,
-            @RequestParam("description") String description,
             @RequestParam("reason") String reason,
             @RequestParam("purchaseDate") String purchaseDate,
             @RequestParam("brand") String brand,
