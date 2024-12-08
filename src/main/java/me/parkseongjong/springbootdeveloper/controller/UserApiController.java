@@ -33,10 +33,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.net.http.HttpHeaders;
 import java.time.Duration;
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 
 @RestController
@@ -86,6 +83,28 @@ public class UserApiController {
         return ResponseEntity.status(HttpStatus.CREATED).body("Signup successful");
     }
 
+    @PostMapping("/bulk-signup")
+    public ResponseEntity<String> bulkSignup(@RequestBody List<SignupRequest> signupRequests) {
+        StringBuilder responseMessage = new StringBuilder();
+        boolean hasConflicts = false;
+
+        for (SignupRequest signupRequest : signupRequests) {
+            if (userService.isEmailAlreadyInUse(signupRequest.getEmail())) {
+                responseMessage.append("Email already in use: ").append(signupRequest.getEmail()).append("\n");
+                hasConflicts = true;
+            } else {
+                userService.save(signupRequest);
+                responseMessage.append("Signup successful for: ").append(signupRequest.getEmail()).append("\n");
+            }
+        }
+
+        if (hasConflicts) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(responseMessage.toString());
+        } else {
+            return ResponseEntity.status(HttpStatus.CREATED).body(responseMessage.toString());
+        }
+    }
+
     @GetMapping("/user-data")
     public ResponseEntity<?> getUserInfo(@AuthenticationPrincipal User user) {
         if (user == null) {
@@ -110,6 +129,24 @@ public class UserApiController {
 
         try {
             String fileKey = user.getProfilePicture();
+            byte[] imageData = imageService.getImageFromS3(fileKey);
+
+            return ResponseEntity.ok()
+                    .header("Content-Type", "image/jpeg")
+                    .body(imageData);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Failed to retrieve profile picture");
+        }
+    }
+
+    @GetMapping("/user-profile-picture/{fileKey}")
+    public ResponseEntity<?> getProfilePicture(@PathVariable String fileKey, @AuthenticationPrincipal User user) {
+        if (user == null) {
+            return ResponseEntity.status(401).body("User not authenticated");
+        }
+
+        try {
             byte[] imageData = imageService.getImageFromS3(fileKey);
 
             return ResponseEntity.ok()
@@ -154,5 +191,15 @@ public class UserApiController {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to update profile");
         }
+    }
+
+    @GetMapping("/friends-all-users")
+    public ResponseEntity<List<User>> friendsAllUsers(@AuthenticationPrincipal User user) {
+        if (user == null) {
+            return ResponseEntity.status(401).body(Collections.emptyList());
+        }
+
+        List<User> allUsers = userService.findAllUsers();
+        return ResponseEntity.ok(allUsers);
     }
 }
