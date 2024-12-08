@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -96,12 +97,12 @@ public class DiaryService {
 
         diary.setTitle(updateDiaryRequest.getTitle());
         diary.setContent(updateDiaryRequest.getContent());
+        diary.setMainImagePath(updateDiaryRequest.getMainImagePath());
+        diary.setSubImagePaths(new ArrayList<>(updateDiaryRequest.getSubImagePaths()));
 
-        // outfits 관련 로직 제거
-
+        diaryRepository.save(diary);
         return diary;
     }
-
     @Transactional
     public void deleteDiary(Long id) {
         Diary diary = diaryRepository.findById(id)

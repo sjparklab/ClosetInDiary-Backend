@@ -97,18 +97,63 @@ public class DiaryController {
         return ResponseEntity.ok(createdDiary);
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<Diary> modifyDiary(@AuthenticationPrincipal User user, @PathVariable Long id, @RequestBody UpdateDiaryRequest updateDiaryRequest) {
-        Diary diary = diaryService.findDiaryById(id);
+    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Diary> modifyDiary(
+            @AuthenticationPrincipal User user,
+            @PathVariable Long id,
+            @RequestPart("data") UpdateDiaryRequest updateDiaryRequest,
+            @RequestPart(value = "mainImage", required = false) MultipartFile mainImage,
+            @RequestPart(value = "subImages", required = false) List<MultipartFile> subImages) {
 
-        if (diary == null || !diary.getUser().getId().equals(user.getId())) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build(); // 다이어리가 없거나 접근 권한이 없으면 예외 처리
+        try {
+            Diary diary = diaryService.findDiaryById(id);
+
+            if (diary == null || !diary.getUser().getId().equals(user.getId())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build(); // 다이어리가 없거나 접근 권한이 없으면 예외 처리
+            }
+
+            updateDiaryRequest.setId(id);
+            updateDiaryRequest.setUser(user); // 로그인된 사용자 정보를 다이어리에 설정
+
+            // 로그 추가
+            if (mainImage != null) {
+                System.out.println("Main Image: " + mainImage.getOriginalFilename());
+                System.out.println("Main Image Size: " + mainImage.getSize());
+            } else {
+                System.out.println("Main Image is null");
+            }
+
+            if (subImages != null) {
+                subImages.forEach(file -> {
+                    System.out.println("Sub Image: " + file.getOriginalFilename());
+                    System.out.println("Sub Image Size: " + file.getSize());
+                });
+            } else {
+                System.out.println("Sub Images are null");
+            }
+
+            String mainImagePath = null;
+            if (mainImage != null && !mainImage.isEmpty()) {
+                // ImageService를 통해 S3 업로드
+                mainImagePath = imageService.uploadFileToS3(mainImage, user.getId().toString());
+            }
+
+            List<String> subImagePaths = null;
+            if (subImages != null && !subImages.isEmpty()) {
+                subImagePaths = subImages.stream()
+                        .map(file -> imageService.uploadFileToS3(file, user.getId().toString()))
+                        .toList();
+            }
+
+            updateDiaryRequest.setMainImagePath(mainImagePath);
+            updateDiaryRequest.setSubImagePaths(subImagePaths);
+
+            Diary updatedDiary = diaryService.updateDiary(updateDiaryRequest);
+            return ResponseEntity.ok(updatedDiary);
+        } catch (UnsupportedOperationException e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
-
-        updateDiaryRequest.setId(id);
-        updateDiaryRequest.setUser(user); // 로그인된 사용자 정보를 다이어리에 설정
-        Diary updatedDiary = diaryService.updateDiary(updateDiaryRequest);
-        return ResponseEntity.ok(updatedDiary);
     }
 
     @DeleteMapping("/{id}")
