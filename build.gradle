@@ -29,6 +29,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-cache'
     implementation 'com.github.ben-manes.caffeine:caffeine:3.1.6'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
+    implementation 'net.coobird:thumbnailator:0.4.14'
 }
 
 test {
