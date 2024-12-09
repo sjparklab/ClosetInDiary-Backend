@@ -18,11 +18,25 @@ public class FriendRequestController {
 
     private final FriendRequestService friendRequestService;
 
-    // 친구 요청 보내기
-    @PostMapping("/send")
-    public ResponseEntity<String> sendFriendRequest(@AuthenticationPrincipal User user, @RequestParam Long receiverId) {
-        friendRequestService.sendFriendRequest(user.getId(), receiverId);
-        return ResponseEntity.ok("Friend request sent successfully.");
+    // Method to send friend request by ID
+    @PostMapping("/send/by-id")
+    public ResponseEntity<String> sendFriendRequestById(@AuthenticationPrincipal User user, @RequestParam Long id) {
+        friendRequestService.sendFriendRequestById(user.getId(), id);
+        return ResponseEntity.ok("Friend request sent successfully by ID.");
+    }
+
+    // Method to send friend request by username
+    @PostMapping("/send/by-username")
+    public ResponseEntity<String> sendFriendRequestByUsername(@AuthenticationPrincipal User user, @RequestParam String username) {
+        friendRequestService.sendFriendRequestByUsername(user.getId(), username);
+        return ResponseEntity.ok("Friend request sent successfully by username.");
+    }
+
+    // Method to send friend request by email
+    @PostMapping("/send/by-email")
+    public ResponseEntity<String> sendFriendRequestByEmail(@AuthenticationPrincipal User user, @RequestParam String email) {
+        friendRequestService.sendFriendRequestByEmail(user.getId(), email);
+        return ResponseEntity.ok("Friend request sent successfully by email.");
     }
 
     // 친구 요청 수락

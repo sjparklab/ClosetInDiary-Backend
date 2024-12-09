@@ -76,4 +76,20 @@ public class FriendRequestService {
     public List<FriendRequest> getSentFriendRequests(Long userId) {
         return friendRequestRepository.findBySenderIdAndStatus(userId, FriendRequestStatus.PENDING).orElse(List.of());
     }
+
+    public void sendFriendRequestById(Long senderId, Long receiverId) {
+        sendFriendRequest(senderId, receiverId);
+    }
+
+    public void sendFriendRequestByUsername(Long senderId, String username) {
+        User receiver = userRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with username: " + username));
+        sendFriendRequest(senderId, receiver.getId());
+    }
+
+    public void sendFriendRequestByEmail(Long senderId, String email) {
+        User receiver = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with email: " + email));
+        sendFriendRequest(senderId, receiver.getId());
+    }
 }
