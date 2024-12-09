@@ -36,12 +36,6 @@ public class Diary {
     @Column(name = "main_image_path")
     private String mainImagePath;
 
-    // 다중 이미지 경로 목록
-    @ElementCollection(fetch = FetchType.EAGER)
-    @CollectionTable(name = "diary_sub_images", joinColumns = @JoinColumn(name = "diary_id"))
-    @Column(name = "image_path")
-    private List<String> subImagePaths;
-
     // 다시 outfits 리스트 추가
     @ManyToMany
     @JoinTable(
@@ -52,13 +46,12 @@ public class Diary {
     private List<Outfit> outfits;
 
     @Builder
-    public Diary(User user, LocalDate date, String title, String content, String mainImagePath, List<String> subImagePaths) {
+    public Diary(User user, LocalDate date, String title, String content, String mainImagePath, List<Outfit> outfits) {
         this.user = user;
         this.date = date;
         this.title = title;
         this.content = content;
         this.mainImagePath = mainImagePath;
-        this.subImagePaths = subImagePaths;
         this.outfits = outfits;
     }
 }

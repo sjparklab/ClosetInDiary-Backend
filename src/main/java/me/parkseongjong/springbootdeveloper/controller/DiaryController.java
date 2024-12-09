@@ -68,8 +68,7 @@ public class DiaryController {
     public ResponseEntity<Diary> createDiary(
             @AuthenticationPrincipal User user,
             @RequestPart("data") DiaryRequest diaryRequest,
-            @RequestPart(value = "mainImage", required = false) MultipartFile mainImage,
-            @RequestPart(value = "subImages", required = false) List<MultipartFile> subImages
+            @RequestPart(value = "mainImage", required = false) MultipartFile mainImage
     ) {
         if (user == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
@@ -79,19 +78,10 @@ public class DiaryController {
 
         String mainImagePath = null;
         if (mainImage != null && !mainImage.isEmpty()) {
-            // ImageService를 통해 S3 업로드
             mainImagePath = imageService.uploadFileToS3(mainImage, user.getId().toString());
         }
 
-        List<String> subImagePaths = null;
-        if (subImages != null && !subImages.isEmpty()) {
-            subImagePaths = subImages.stream()
-                    .map(file -> imageService.uploadFileToS3(file, user.getId().toString()))
-                    .toList();
-        }
-
         diaryRequest.setMainImagePath(mainImagePath);
-        diaryRequest.setSubImagePaths(subImagePaths);
 
         Diary createdDiary = diaryService.createDiary(diaryRequest);
         return ResponseEntity.ok(createdDiary);
@@ -102,51 +92,24 @@ public class DiaryController {
             @AuthenticationPrincipal User user,
             @PathVariable Long id,
             @RequestPart("data") UpdateDiaryRequest updateDiaryRequest,
-            @RequestPart(value = "mainImage", required = false) MultipartFile mainImage,
-            @RequestPart(value = "subImages", required = false) List<MultipartFile> subImages) {
+            @RequestPart(value = "mainImage", required = false) MultipartFile mainImage) {
 
         try {
             Diary diary = diaryService.findDiaryById(id);
 
             if (diary == null || !diary.getUser().getId().equals(user.getId())) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).build(); // 다이어리가 없거나 접근 권한이 없으면 예외 처리
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
             }
 
             updateDiaryRequest.setId(id);
-            updateDiaryRequest.setUser(user); // 로그인된 사용자 정보를 다이어리에 설정
-
-            // 로그 추가
-            if (mainImage != null) {
-                System.out.println("Main Image: " + mainImage.getOriginalFilename());
-                System.out.println("Main Image Size: " + mainImage.getSize());
-            } else {
-                System.out.println("Main Image is null");
-            }
-
-            if (subImages != null) {
-                subImages.forEach(file -> {
-                    System.out.println("Sub Image: " + file.getOriginalFilename());
-                    System.out.println("Sub Image Size: " + file.getSize());
-                });
-            } else {
-                System.out.println("Sub Images are null");
-            }
+            updateDiaryRequest.setUser(user);
 
             String mainImagePath = null;
             if (mainImage != null && !mainImage.isEmpty()) {
-                // ImageService를 통해 S3 업로드
                 mainImagePath = imageService.uploadFileToS3(mainImage, user.getId().toString());
             }
 
-            List<String> subImagePaths = null;
-            if (subImages != null && !subImages.isEmpty()) {
-                subImagePaths = subImages.stream()
-                        .map(file -> imageService.uploadFileToS3(file, user.getId().toString()))
-                        .toList();
-            }
-
             updateDiaryRequest.setMainImagePath(mainImagePath);
-            updateDiaryRequest.setSubImagePaths(subImagePaths);
 
             Diary updatedDiary = diaryService.updateDiary(updateDiaryRequest);
             return ResponseEntity.ok(updatedDiary);
@@ -157,7 +120,8 @@ public class DiaryController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<String> deleteDiary(@AuthenticationPrincipal User user, @PathVariable Long id) {
+    public ResponseEntity<
+            String> deleteDiary(@AuthenticationPrincipal User user, @PathVariable Long id) {
         Diary diary = diaryService.findDiaryById(id);
 
         if (diary == null || !diary.getUser().getId().equals(user.getId())) {
@@ -172,6 +136,10 @@ public class DiaryController {
     public ResponseEntity<?> getProfilePicture(@PathVariable String fileKey, @AuthenticationPrincipal User user) {
         if (user == null) {
             return ResponseEntity.status(401).body("User not authenticated");
+        }
+
+        if (fileKey == null || fileKey.isEmpty() || fileKey.equals("undefined") || fileKey.equals("null")) {
+            return ResponseEntity.status(400).body("Invalid file key");
         }
 
         try {

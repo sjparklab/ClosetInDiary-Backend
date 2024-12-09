@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import me.parkseongjong.springbootdeveloper.domain.Outfit;
 import me.parkseongjong.springbootdeveloper.domain.OutfitCategory;
 import me.parkseongjong.springbootdeveloper.domain.User;
+import me.parkseongjong.springbootdeveloper.dto.DiaryDTO;
 import me.parkseongjong.springbootdeveloper.repository.OutfitRepository;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.core.io.ByteArrayResource;
@@ -29,6 +30,7 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/closet")
@@ -251,5 +253,25 @@ public class OutfitController {
         outfitRepository.save(outfit); // Save the updated outfit
 
         return ResponseEntity.ok("Outfit updated successfully!");
+    }
+
+    @GetMapping("/{id}/diaries")
+    public ResponseEntity<?> getDiariesByOutfit(@PathVariable Long id, @AuthenticationPrincipal User user) {
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not authenticated");
+        }
+
+        Outfit outfit = outfitRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Not Found: " + id));
+
+        if (!outfit.getUser().getId().equals(user.getId())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Unauthorized access");
+        }
+
+        List<DiaryDTO> diaryDTOs = outfit.getDiaries().stream()
+                .map(diary -> new DiaryDTO(diary.getId(), diary.getDate(), diary.getTitle(), diary.getContent(), diary.getMainImagePath()))
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(diaryDTOs);
     }
 }

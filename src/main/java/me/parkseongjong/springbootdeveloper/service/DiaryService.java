@@ -3,9 +3,11 @@ package me.parkseongjong.springbootdeveloper.service;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import me.parkseongjong.springbootdeveloper.domain.Diary;
+import me.parkseongjong.springbootdeveloper.domain.Outfit;
 import me.parkseongjong.springbootdeveloper.dto.DiaryRequest;
 import me.parkseongjong.springbootdeveloper.dto.UpdateDiaryRequest;
 import me.parkseongjong.springbootdeveloper.repository.DiaryRepository;
+import me.parkseongjong.springbootdeveloper.repository.OutfitRepository;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
@@ -20,6 +22,7 @@ import java.util.List;
 public class DiaryService {
 
     private final DiaryRepository diaryRepository;
+    private final OutfitRepository outfitRepository;
 
     public List<Diary> findAllDiaries() {
         return diaryRepository.findAll();
@@ -73,8 +76,9 @@ public class DiaryService {
 
     @Transactional
     public Diary createDiary(DiaryRequest diaryRequest) {
-        // date 문자열 -> LocalDate 변환
         LocalDate parsedDate = LocalDate.parse(diaryRequest.getDate(), DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+
+        List<Outfit> outfits = outfitRepository.findAllById(diaryRequest.getOutfitIds());
 
         Diary diary = Diary.builder()
                 .date(parsedDate)
@@ -82,10 +86,8 @@ public class DiaryService {
                 .title(diaryRequest.getTitle())
                 .content(diaryRequest.getContent())
                 .mainImagePath(diaryRequest.getMainImagePath())
-                .subImagePaths(diaryRequest.getSubImagePaths())
+                .outfits(outfits) // Set the fetched outfits
                 .build();
-
-        // outfits 관련 로직 제거
 
         return diaryRepository.save(diary);
     }
@@ -95,14 +97,17 @@ public class DiaryService {
         Diary diary = diaryRepository.findById(updateDiaryRequest.getId())
                 .orElseThrow(() -> new IllegalArgumentException("Diary not found"));
 
+        List<Outfit> outfits = outfitRepository.findAllById(updateDiaryRequest.getOutfitIds());
+
         diary.setTitle(updateDiaryRequest.getTitle());
         diary.setContent(updateDiaryRequest.getContent());
         diary.setMainImagePath(updateDiaryRequest.getMainImagePath());
-        diary.setSubImagePaths(new ArrayList<>(updateDiaryRequest.getSubImagePaths()));
+        diary.setOutfits(outfits); // Set the fetched outfits
 
         diaryRepository.save(diary);
         return diary;
     }
+
     @Transactional
     public void deleteDiary(Long id) {
         Diary diary = diaryRepository.findById(id)

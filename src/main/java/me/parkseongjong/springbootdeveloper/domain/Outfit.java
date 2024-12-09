@@ -51,6 +51,7 @@ public class Outfit {
     private String fileName;
 
     // Diary 엔티티와 양방향 매핑
+    @JsonIgnore
     @ManyToMany(mappedBy = "outfits")
     private List<Diary> diaries;
 

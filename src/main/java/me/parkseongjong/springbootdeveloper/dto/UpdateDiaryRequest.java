@@ -17,5 +17,5 @@ public class UpdateDiaryRequest {
     private String date;
     private User user;
     private String mainImagePath;       // 추가
-    private List<String> subImagePaths; // 추가
+    private List<Long> outfitIds;
 }
