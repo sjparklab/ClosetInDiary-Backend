@@ -12,6 +12,7 @@ import me.parkseongjong.springbootdeveloper.domain.User;
 import me.parkseongjong.springbootdeveloper.dto.DiaryDTO;
 import me.parkseongjong.springbootdeveloper.repository.OutfitRepository;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
@@ -165,6 +166,7 @@ public class OutfitController {
         return new ResponseEntity<>(outfitData, HttpStatus.OK);
     }
 
+    @CacheEvict(value = "outfitImages", key = "#id")
     @DeleteMapping("/image/{id}")
     public ResponseEntity<String> deleteImageFromS3(@PathVariable Long id, @AuthenticationPrincipal User user) {
         Outfit outfit = outfitRepository.findById(id)
@@ -196,6 +198,7 @@ public class OutfitController {
         }
     }
 
+    @CacheEvict(value = "outfitImages", key = "#id")
     @PutMapping("/image/{id}")
     public ResponseEntity<String> updateOutfitImage(
             @PathVariable Long id,
